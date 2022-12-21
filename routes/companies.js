@@ -21,10 +21,10 @@ const router = new express.Router();
  *
  * Returns { handle, name, description, numEmployees, logoUrl }
  *
- * Authorization required: login
+ * Authorization required: admin
  */
 
-router.post("/", ensureLoggedIn, ensureAdmin, async function (req, res, next) {
+router.post("/", ensureAdmin, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, companyNewSchema);
     if (!validator.valid) {
@@ -33,10 +33,8 @@ router.post("/", ensureLoggedIn, ensureAdmin, async function (req, res, next) {
     }
 
     const company = await Company.create(req.body);
-    console.log(res.locals.user)
     return res.status(201).json({ company });
   } catch (err) {
-    console.log(res.locals.user)
     return next(err);
   }
 });
@@ -58,7 +56,7 @@ router.get("/", async function (req, res, next) {
     // if any params to filter by, use Company.filterBy
     let companies = (name || minEmployees || maxEmployees) 
                     ? await Company.filterBy({name, minEmployees, maxEmployees})
-                    : companies = await Company.findAll();
+                    : await Company.findAll();
     return res.json({ companies });
     }
    catch (err) {
@@ -91,10 +89,10 @@ router.get("/:handle", async function (req, res, next) {
  *
  * Returns { handle, name, description, numEmployees, logo_url }
  *
- * Authorization required: login
+ * Authorization required: admin
  */
 
-router.patch("/:handle", ensureLoggedIn, async function (req, res, next) {
+router.patch("/:handle", ensureAdmin, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, companyUpdateSchema);
     if (!validator.valid) {
@@ -111,10 +109,10 @@ router.patch("/:handle", ensureLoggedIn, async function (req, res, next) {
 
 /** DELETE /[handle]  =>  { deleted: handle }
  *
- * Authorization: login
+ * Authorization: admin
  */
 
-router.delete("/:handle", ensureLoggedIn, async function (req, res, next) {
+router.delete("/:handle", ensureAdmin, async function (req, res, next) {
   try {
     await Company.remove(req.params.handle);
     return res.json({ deleted: req.params.handle });

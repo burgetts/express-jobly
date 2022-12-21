@@ -54,8 +54,26 @@ function ensureAdmin(req, res, next) {
   }
 }
 
+/** Middleware to use for routes that only an admin or specific user should access. 
+ * 
+ * If not, raises Unauthorized. 
+ * Ex: An admin or user1 can look at a user1's profile, but no other users.
+ */
+function ensureAdminOrCurrentUser(req,res,next) {
+  try {
+    if (res.locals.user) {
+      if ((res.locals.user.username === req.params.username) || (res.locals.user.isAdmin)) {
+        return next()
+      }
+    } 
+    throw new UnauthorizedError();
+  } catch (err) {
+    return next(err)
+  }
+}
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
-  ensureAdmin
+  ensureAdmin,
+  ensureAdminOrCurrentUser
 };

@@ -39,7 +39,7 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
    *  partialQuery: `name ~* $1 AND num_employees >= $2 AND num_employees <= $3`,
    *  vals: ['gray', 45, 100]
    * } */
-    function sqlForWhereStatement(dataToFilterBy) {
+    function sqlForCompanyWhereStatement(dataToFilterBy) {
       const d = dataToFilterBy
       let partialQuery = []
       // Check that minEmployees is less than maxEmployees
@@ -74,4 +74,43 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
       return {partialQuery, vals}
     }
 
-module.exports = { sqlForPartialUpdate, sqlForWhereStatement};
+  /* Function to build WHERE SQL statement in order to filter jobs by title, minSalary, and hasEquity.
+   * Input: 
+   * dataToFilterBy: { title: 'engineer, minSalary: 70000, hasEquity: true } 
+   * - any of these values can be undefined. 
+   * Output:
+   * {
+   *  partialQuery: `title ~* $1 AND salary >= $2 AND equity != "0"`,
+   *  vals: ['engineer', 70000]
+   * } */
+
+  function sqlForJobWhereStatement(dataToFilterBy) {
+    const d = dataToFilterBy
+    let partialQuery = []
+
+    // Get parts of WHERE statement
+    let idx = 0;
+    let vals = []
+    for (let key in d) {
+      if (d[key] !== undefined) { 
+        if (key === 'title') {
+          idx++
+          partialQuery.push(`title ~* $${idx}`)
+          vals.push(d[key])
+        }
+        if (key === 'minSalary') {
+          idx++
+          partialQuery.push(`salary >= $${idx}`) 
+          vals.push(+d[key])
+        }
+        if (key === 'hasEquity') {
+          if (d[key] === 'true'){
+            partialQuery.push(`equity != '0'`) 
+          }
+        }
+      }
+    }
+    partialQuery = partialQuery.join(' AND ')
+    return {partialQuery, vals}
+  }
+module.exports = { sqlForPartialUpdate, sqlForCompanyWhereStatement, sqlForJobWhereStatement};

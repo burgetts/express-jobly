@@ -70,17 +70,24 @@ class Company {
    **/
 
   static async get(handle) {
-    const companyRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           WHERE handle = $1`,
-        [handle]);
 
-    const company = companyRes.rows[0];
+    const companyRes = await db.query(
+         `SELECT c.handle, c.name, c.description, c.num_employees AS "numEmployees", c.logo_url AS "logoUrl", j.id, j.title, j.salary, j.equity
+          FROM companies as c
+          JOIN jobs as j 
+          ON c.handle = j.company_handle 
+          WHERE c.handle = $1`,
+        [handle]);
+    const firstEntry = companyRes.rows[0]
+   // const jobs = companyRes.rows.map(r => {'id: r.id, title: r.title, salary: r.salary, equity: r.equity })
+    const company = {
+      handle: firstEntry.handle,
+      name: firstEntry.name,
+      description: firstEntry.description,
+      numEmployees: firstEntry.numEmployees,
+      logoUrl: firstEntry.logoUrl,
+      jobs: companyRes.rows.map(r => ({id: r.id, title: r.title, salary: r.salary, equity: r.equity }))
+    };
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
 
@@ -89,7 +96,8 @@ class Company {
 
   /* Filter company data by name and number of employees. 
    * dataToFilter by can look like: {name: gray, minEmployees: 12, maxEmployees: 35} 
-   * Name is case insensitive. */
+   * Name is case insensitive, partial match. */
+
   static async filterBy(dataToFilterBy) {
     let {partialQuery, vals} = sqlForWhereStatement(dataToFilterBy)
     let resp = await db.query(`SELECT handle, 

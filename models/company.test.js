@@ -112,7 +112,7 @@ describe("get", function () {
 });
 
 /************************************** filterBy */
-// filterBy(name, minEmployees, maxEmployees)
+
 describe("filterBy", function () {
   test("filter by name (lowercase)", async function () {
     const results = await Company.filterBy({name: "c1", minEmployees: undefined, maxEmployees: undefined})
