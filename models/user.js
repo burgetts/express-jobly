@@ -118,27 +118,50 @@ class User {
   /** Given a username, return data about user.
    *
    * Returns { username, first_name, last_name, is_admin, jobs }
-   *   where jobs is { id, title, company_handle, company_name, state }
+   *   where jobs is [id, ...]
    *
    * Throws NotFoundError if user not found.
    **/
 
   static async get(username) {
-    const userRes = await db.query(
-          `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           WHERE username = $1`,
+    // check if user has jobs
+    const userJobsRes = await db.query(`SELECT username FROM applications WHERE username = $1`, [username])
+    if (userJobsRes.rows.length === 0) {
+      let userWithoutJobsRes = await db.query(`SELECT username, first_name AS "firstName", last_name AS "lastName", email, is_admin AS "isAdmin"
+                                               FROM users
+                                               WHERE username = $1`, [username])
+      
+      if (userWithoutJobsRes.rows.length == 0)  throw new NotFoundError(`No user: ${username}`);
+      // user without jobs:
+      let u = userWithoutJobsRes.rows[0]
+      const user = {
+        username: u.username,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        email: u.email,
+        isAdmin: u.isAdmin,
+      }
+      return user
+    }
+
+    let userWithJobsRes = await db.query(
+          `SELECT u.username, u.first_name AS "firstName", u.last_name AS "lastName", u.email, u.is_admin AS "asAdmin", a.job_id 
+           FROM users as u                                                                                                                                                                                             
+           JOIN applications as a                                                                                                                                                                                      
+           ON u.username = a.username                                                                                                                                                                                  
+           WHERE u.username = $1`,
         [username],
     );
 
-    const user = userRes.rows[0];
-
-    if (!user) throw new NotFoundError(`No user: ${username}`);
-
+    const firstEntry = userWithJobsRes.rows[0]
+    const user = {
+      username: firstEntry.username,
+      firstName: firstEntry.firstName,
+      lastName: firstEntry.lastName,
+      email: firstEntry.email,
+      isAdmin: firstEntry.isAdmin,
+      jobs: userWithJobsRes.rows.map(r => (r.job_id) ) // want to make this more user friendly if there are no jobs
+    }
     return user;
   }
 
@@ -203,6 +226,20 @@ class User {
     const user = result.rows[0];
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
+  }
+
+
+//  /** Allows user to apply for a job.  */
+  static async apply(username, job_id) {
+    let checkForJob = await db.query(`SELECT id FROM jobs WHERE id = $1`, [job_id])
+    if (checkForJob.rows.length === 0){
+      throw new NotFoundError(`No job with id: ${job_id}`)
+    }
+
+    let newApplication = await db.query(`INSERT INTO applications (username, job_id)
+                                VALUES ($1, $2)
+                                RETURNING job_id`, [username, job_id])
+    return newApplication.rows[0]
   }
 }
 

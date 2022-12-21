@@ -7,6 +7,7 @@ const {
 } = require("../expressError");
 const db = require("../db.js");
 const User = require("./user.js");
+
 const {
   commonBeforeAll,
   commonBeforeEach,
@@ -139,7 +140,7 @@ describe("get", function () {
       firstName: "U1F",
       lastName: "U1L",
       email: "u1@email.com",
-      isAdmin: false,
+      isAdmin: false
     });
   });
 
@@ -228,3 +229,28 @@ describe("remove", function () {
     }
   });
 });
+
+/************************************** apply */
+
+describe("apply", function () {
+  test("works", async function() {
+    let job = await db.query(`SELECT id 
+    FROM jobs
+    WHERE title = 'Software Engineer'`)
+    const id = job.rows[0].id
+    const resp = await User.apply('u1', id)
+
+    expect(resp).toEqual({job_id: id})
+  })
+
+  test("NotFoundError for invalid job id", async function() {
+    try {
+      const resp = await User.apply('u1', 999)
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy()
+    }
+  })
+})
+
+
+

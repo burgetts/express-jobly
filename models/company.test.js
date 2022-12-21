@@ -40,7 +40,7 @@ describe("create", function () {
         name: "New",
         description: "New Description",
         num_employees: 1,
-        logo_url: "http://new.img",
+        logo_url: "http://new.img"
       },
     ]);
   });
@@ -98,6 +98,14 @@ describe("get", function () {
       description: "Desc1",
       numEmployees: 1,
       logoUrl: "http://c1.img",
+      jobs: [
+        {
+          equity: "0",
+          id: expect.any(Number),
+          salary: 70000,
+          title: "Software Engineer"
+        }
+      ]
     });
   });
 

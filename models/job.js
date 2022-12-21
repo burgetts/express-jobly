@@ -84,9 +84,7 @@ class Job {
     static async update(id, data) {
         const { setCols, values } = sqlForPartialUpdate(
             data,
-            {
-              // companyHandle: "company_handle",
-            });
+            {});
 
         const idVarIdx = "$" + (values.length + 1);
     

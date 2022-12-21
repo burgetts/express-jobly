@@ -375,3 +375,32 @@ describe("DELETE /users/:username", function () {
     expect(resp.statusCode).toEqual(404);
   });
 });
+
+/************************************** POST /users/:username/jobs/:id */
+describe("POST /users/:username/jobs/:id", function () {
+  test("works for authorized user", async function () {
+    // get job id
+    const job = await db.query(`SELECT id FROM jobs WHERE title = 'Software Engineer'`)
+    const id = job.rows[0].id
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${id}`)
+      .set("authorization", `Bearer ${u1Token}`)
+    expect(resp.statusCode).toEqual(200)
+    expect(resp.body).toEqual({applied: {job_id: id}})
+  })
+  test("unauth when applying for a different user", async function () {
+    // get job id
+    const job = await db.query(`SELECT id FROM jobs WHERE title = 'Software Engineer'`)
+    const id = job.rows[0].id
+    const resp = await request(app)
+      .post(`/users/u2/jobs/${id}`)
+      .set("authorization", `Bearer ${u1Token}`)
+    expect(resp.statusCode).toEqual(401)
+  })
+  test("error when id is invalid", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/999`)
+      .set("authorization", `Bearer ${u1Token}`)
+    expect(resp.statusCode).toEqual(404)
+  })
+})

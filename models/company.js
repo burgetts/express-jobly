@@ -2,7 +2,7 @@
 
 const db = require("../db");
 const { ExpressError, BadRequestError, NotFoundError } = require("../expressError");
-const { sqlForPartialUpdate, sqlForWhereStatement } = require("../helpers/sql");
+const { sqlForPartialUpdate, sqlForCompanyWhereStatement } = require("../helpers/sql");
 
 /** Related functions for companies. */
 
@@ -70,7 +70,7 @@ class Company {
    **/
 
   static async get(handle) {
-
+    
     const companyRes = await db.query(
          `SELECT c.handle, c.name, c.description, c.num_employees AS "numEmployees", c.logo_url AS "logoUrl", j.id, j.title, j.salary, j.equity
           FROM companies as c
@@ -79,7 +79,8 @@ class Company {
           WHERE c.handle = $1`,
         [handle]);
     const firstEntry = companyRes.rows[0]
-   // const jobs = companyRes.rows.map(r => {'id: r.id, title: r.title, salary: r.salary, equity: r.equity })
+    if (!firstEntry) throw new NotFoundError(`No company: ${handle}`);
+
     const company = {
       handle: firstEntry.handle,
       name: firstEntry.name,
@@ -89,7 +90,7 @@ class Company {
       jobs: companyRes.rows.map(r => ({id: r.id, title: r.title, salary: r.salary, equity: r.equity }))
     };
 
-    if (!company) throw new NotFoundError(`No company: ${handle}`);
+    
 
     return company;
   }
@@ -99,7 +100,7 @@ class Company {
    * Name is case insensitive, partial match. */
 
   static async filterBy(dataToFilterBy) {
-    let {partialQuery, vals} = sqlForWhereStatement(dataToFilterBy)
+    let {partialQuery, vals} = sqlForCompanyWhereStatement(dataToFilterBy)
     let resp = await db.query(`SELECT handle, 
                                 name,
                                 description,
